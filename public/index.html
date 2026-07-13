@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Nautical Ops — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --navy:#1e3a5f;--navy-dark:#152d4a;--navy-light:#e8eef5;
+    --bg:#f7f8fa;--white:#ffffff;--border:#e2e8f0;--border-dark:#cbd5e1;
+    --text:#1e293b;--text-muted:#64748b;--text-light:#94a3b8;
+    --green:#16a34a;--green-bg:#f0fdf4;--green-border:#bbf7d0;
+    --red:#dc2626;--red-bg:#fef2f2;--amber:#d97706;--amber-bg:#fffbeb;
+    --blue:#2563eb;--blue-bg:#eff6ff;--sidebar-w:224px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;line-height:1.5;min-height:100vh;}
+  #login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);}
+  .login-box{width:380px;background:var(--white);border:1px solid var(--border);border-radius:16px;padding:40px;box-shadow:0 4px 24px rgba(0,0,0,0.06);}
+  .login-logo{display:flex;align-items:center;gap:10px;margin-bottom:28px;}
+  .logo-icon{width:40px;height:40px;background:var(--navy);border-radius:10px;display:flex;align-items:center;justify-content:center;}
+  .logo-icon svg{width:22px;height:22px;}
+  .login-brand{font-size:16px;font-weight:600;color:var(--navy);line-height:1.2;}
+  .login-brand span{display:block;font-size:11px;font-weight:400;color:var(--text-muted);letter-spacing:0.05em;}
+  .login-title{font-size:20px;font-weight:600;color:var(--text);margin-bottom:6px;}
+  .login-sub{font-size:13px;color:var(--text-muted);margin-bottom:28px;}
+  .login-label{font-size:12px;font-weight:500;color:var(--text);margin-bottom:6px;display:block;}
+  .login-input{width:100%;background:var(--white);border:1px solid var(--border-dark);border-radius:8px;padding:10px 14px;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:14px;margin-bottom:16px;outline:none;transition:border-color 0.15s;}
+  .login-input:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(30,58,95,0.08);}
+  .login-btn{width:100%;background:var(--navy);color:white;border:none;border-radius:8px;padding:11px;font-family:'Inter',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:background 0.15s;}
+  .login-btn:hover{background:var(--navy-dark);}
+  .login-error{margin-top:12px;font-size:13px;color:var(--red);}
+  #app{display:none;min-height:100vh;}
+  .topbar{position:fixed;top:0;left:0;right:0;height:56px;background:var(--navy);display:flex;align-items:center;z-index:100;padding:0 20px;gap:0;box-shadow:0 1px 0 rgba(255,255,255,0.08);}
+  .topbar-brand{display:flex;align-items:center;gap:9px;margin-right:24px;flex-shrink:0;}
+  .topbar-logo{width:28px;height:28px;background:rgba(255,255,255,0.12);border-radius:7px;display:flex;align-items:center;justify-content:center;}
+  .topbar-logo svg{width:16px;height:16px;}
+  .topbar-brand-text{font-size:13px;font-weight:600;color:white;line-height:1.2;}
+  .topbar-brand-text span{display:block;font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.08em;text-transform:uppercase;}
+  .topbar-divider{width:1px;height:24px;background:rgba(255,255,255,0.12);margin-right:16px;flex-shrink:0;}
+  .nav-tabs{display:flex;align-items:center;gap:2px;flex:1;overflow-x:auto;}
+  .nav-tabs::-webkit-scrollbar{display:none;}
+  .nav-item{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:7px;cursor:pointer;font-size:13px;color:rgba(255,255,255,0.6);transition:all 0.12s;border:none;background:none;white-space:nowrap;flex-shrink:0;}
+  .nav-item:hover{background:rgba(255,255,255,0.08);color:white;}
+  .nav-item.active{background:rgba(255,255,255,0.14);color:white;}
+  .nav-item .icon{font-size:13px;}
+  .topbar-actions{display:flex;align-items:center;gap:8px;margin-left:auto;flex-shrink:0;}
+  .refresh-btn{background:rgba(255,255,255,0.08);border:none;border-radius:7px;padding:6px 12px;color:rgba(255,255,255,0.7);font-size:12px;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;gap:5px;transition:background 0.12s;white-space:nowrap;}
+  .refresh-btn:hover{background:rgba(255,255,255,0.14);color:white;}
+  .logout-btn{background:none;border:none;padding:6px 10px;color:rgba(255,255,255,0.35);font-size:12px;cursor:pointer;font-family:'Inter',sans-serif;transition:color 0.12s;white-space:nowrap;}
+  .logout-btn:hover{color:rgba(255,255,255,0.7);}
+  .main{margin-left:0;padding:84px 32px 32px;min-height:100vh;}
+  .page-header{margin-bottom:24px;}
+  .page-title{font-size:20px;font-weight:600;color:var(--text);margin-bottom:2px;}
+  .page-subtitle{font-size:13px;color:var(--text-muted);}
+  .last-updated{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-light);margin-top:3px;}
+  .section{display:none;}
+  .section.active{display:block;}
+  .stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;margin-bottom:24px;}
+  .stat-card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:18px 20px;border-top:3px solid var(--accent,var(--navy));}
+  .stat-label{font-size:11px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;}
+  .stat-value{font-size:28px;font-weight:600;color:var(--text);line-height:1;margin-bottom:6px;}
+  .stat-delta{font-size:12px;color:var(--green);font-weight:500;}
+  .stat-delta.neutral{color:var(--text-muted);}
+  .stat-delta.down{color:var(--red);}
+  .stat-badge{display:inline-block;font-size:11px;font-weight:500;padding:2px 8px;border-radius:20px;}
+  .badge-green{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border);}
+  .badge-blue{background:var(--blue-bg);color:var(--blue);}
+  .badge-amber{background:var(--amber-bg);color:var(--amber);}
+  .badge-navy{background:var(--navy-light);color:var(--navy);}
+  .chart-card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin-bottom:24px;}
+  .chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+  .chart-title{font-size:14px;font-weight:600;color:var(--text);}
+  .chart-sub{font-size:12px;color:var(--text-muted);}
+  .chart-bars{display:flex;align-items:flex-end;gap:5px;height:100px;}
+  .chart-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:flex-end;}
+  .chart-bar{width:100%;background:var(--navy-light);border-radius:4px 4px 0 0;min-height:3px;transition:background 0.15s;border:1px solid var(--border);border-bottom:none;}
+  .chart-bar:hover{background:var(--navy);}
+  .chart-bar-label{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text-light);text-align:center;}
+  .table-card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:24px;}
+  .table-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+  .table-title{font-size:14px;font-weight:600;color:var(--text);}
+  .table-count{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-muted);background:var(--bg);padding:3px 10px;border-radius:20px;border:1px solid var(--border);}
+  .data-table{width:100%;border-collapse:collapse;}
+  .data-table th{font-size:11px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);padding:10px 20px;text-align:left;background:var(--bg);border-bottom:1px solid var(--border);}
+  .data-table td{padding:12px 20px;font-size:13px;color:var(--text);border-bottom:1px solid var(--border);vertical-align:middle;}
+  .data-table tr:last-child td{border-bottom:none;}
+  .data-table tr:hover td{background:#fafbfc;}
+  .mono{font-family:'IBM Plex Mono',monospace;font-size:12px;}
+  .status-pill{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;padding:3px 8px;border-radius:20px;}
+  .status-pill::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor;}
+  .pill-active{background:var(--green-bg);color:var(--green);}
+  .pill-trialing{background:var(--blue-bg);color:var(--blue);}
+  .pill-none{background:var(--bg);color:var(--text-muted);border:1px solid var(--border);}
+  .pill-canceled{background:var(--red-bg);color:var(--red);}
+  .pill-past_due{background:var(--amber-bg);color:var(--amber);}
+  .loading-state{display:flex;align-items:center;justify-content:center;height:200px;color:var(--text-muted);font-size:13px;gap:10px;}
+  .spinner{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--navy);border-radius:50%;animation:spin 0.7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;}
+  .empty-state{padding:40px;text-align:center;color:var(--text-muted);font-size:13px;}
+  @media(max-width:768px){
+    .topbar{padding:0 12px;gap:0;}
+    .topbar-brand-text span{display:none;}
+    .main{padding:72px 16px 24px;}
+    .two-col{grid-template-columns:1fr;}
+    .stats-grid{grid-template-columns:1fr 1fr;}
+    .logout-btn{display:none;}
+    .nav-item span:not(.icon){display:none;}
+    .nav-item{padding:6px 10px;}
+  }
+  @media(max-width:480px){
+    .stats-grid{grid-template-columns:1fr 1fr;gap:8px;}
+    .stat-card{padding:14px;}
+    .stat-value{font-size:20px;}
+    .data-table th,.data-table td{padding:8px 10px;font-size:11px;}
+    .page-title{font-size:17px;}
+    .chart-card{padding:14px;}
+    .table-header{padding:12px 14px;flex-wrap:wrap;gap:6px;}
+  }
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M4 17.5Q4 20 12 20.5Q20 20 20 17.5L18.5 11H5.5Z" fill="none" stroke="white" stroke-width="1.4" stroke-linejoin="round"/>
+          <rect x="7.5" y="7" width="9" height="5" rx="1" fill="none" stroke="white" stroke-width="1.4"/>
+          <line x1="12" y1="3" x2="12" y2="7" stroke="white" stroke-width="1.4" stroke-linecap="round"/>
+          <circle cx="12" cy="2.5" r="1.2" fill="white"/>
+          <path d="M3 22 Q6 19.5 9 22 Q12 24.5 15 22 Q18 19.5 21 22" fill="none" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="login-brand">Nautical Ops<span>Admin Portal</span></div>
+    </div>
+    <div class="login-title">Welcome back</div>
+    <div class="login-sub">Enter your password to access the dashboard</div>
+    <label class="login-label">Password</label>
+    <input type="password" id="password-input" class="login-input" placeholder="••••••••••••" autocomplete="current-password"/>
+    <button class="login-btn" onclick="handleLogin()">Sign in to Dashboard</button>
+    <div id="login-error" class="login-error"></div>
+  </div>
+</div>
+
+<div id="app">
+  <nav class="topbar">
+    <div class="topbar-brand">
+      <div class="topbar-logo">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M4 17.5Q4 20 12 20.5Q20 20 20 17.5L18.5 11H5.5Z" fill="none" stroke="white" stroke-width="1.4" stroke-linejoin="round"/>
+          <rect x="7.5" y="7" width="9" height="5" rx="1" fill="none" stroke="white" stroke-width="1.4"/>
+          <line x1="12" y1="3" x2="12" y2="7" stroke="white" stroke-width="1.4" stroke-linecap="round"/>
+          <circle cx="12" cy="2.5" r="1.2" fill="white"/>
+        </svg>
+      </div>
+      <div class="topbar-brand-text">Nautical Ops<span>Admin</span></div>
+    </div>
+    <div class="topbar-divider"></div>
+    <div class="nav-tabs">
+      <button class="nav-item active" onclick="showSection('overview',this)"><span class="icon">⚡</span><span>Dashboard</span></button>
+      <button class="nav-item" onclick="showSection('vessels',this)"><span class="icon">⚓</span><span>Vessels</span></button>
+      <button class="nav-item" onclick="showSection('users',this)"><span class="icon">👥</span><span>Users</span></button>
+      <button class="nav-item" onclick="showSection('subscriptions',this)"><span class="icon">💳</span><span>Subscriptions</span></button>
+      <button class="nav-item" onclick="showSection('activity',this)"><span class="icon">📊</span><span>Activity</span></button>
+      <button class="nav-item" onclick="showSection('faq',this);loadFAQData()"><span class="icon">❓</span><span>FAQ</span></button>
+      <button class="nav-item" onclick="showSection('accounting',this);renderAccounting()"><span class="icon">💰</span><span>Accounting</span></button>
+      <button class="nav-item" onclick="showSection('fouroceans',this);renderFourOceans()"><span class="icon">🌊</span><span>4Oceans</span></button>
+      <button class="nav-item" onclick="showSection('updates',this);loadUpdates()"><span class="icon">🚀</span><span>Updates</span></button>
+    </div>
+    <div class="topbar-actions">
+      <button class="refresh-btn" onclick="loadData()">↻ <span>Refresh</span></button>
+      <button class="logout-btn" onclick="handleLogout()">Sign out</button>
+    </div>
+  </nav>
+
+  <main class="main">
+    <div id="section-overview" class="section active">
+      <div class="page-header">
+        <div class="page-title">Dashboard</div>
+        <div class="page-subtitle">Live snapshot of Nautical Ops</div>
+        <div class="last-updated" id="last-updated-overview"></div>
+      </div>
+      <div id="overview-content"><div class="loading-state"><div class="spinner"></div> Loading data...</div></div>
+    </div>
+    <div id="section-vessels" class="section">
+      <div class="page-header"><div class="page-title">Vessels</div><div class="page-subtitle">All registered vessels and their status</div></div>
+      <div id="vessels-content"><div class="loading-state"><div class="spinner"></div> Loading...</div></div>
+    </div>
+    <div id="section-users" class="section">
+      <div class="page-header"><div class="page-title">Users</div><div class="page-subtitle">All captains and crew members</div></div>
+      <div id="users-content"><div class="loading-state"><div class="spinner"></div> Loading...</div></div>
+    </div>
+    <div id="section-subscriptions" class="section">
+      <div class="page-header"><div class="page-title">Subscriptions</div><div class="page-subtitle">All vessel subscription plans</div></div>
+      <div id="subscriptions-content"><div class="loading-state"><div class="spinner"></div> Loading...</div></div>
+    </div>
+    <div id="section-activity" class="section">
+      <div class="page-header"><div class="page-title">Activity</div><div class="page-subtitle">App usage and data metrics</div></div>
+      <div id="activity-content"><div class="loading-state"><div class="spinner"></div> Loading...</div></div>
+    </div>
+    <div id="section-accounting" class="section">
+      <div class="page-header"><div class="page-title">Accounting</div><div class="page-subtitle">Track expenses and calculate net profit</div></div>
+      <div id="accounting-content"><div class="loading-state"><div class="spinner"></div> Loading...</div></div>
+    </div>
+    <div id="section-fouroceans" class="section">
+      <div class="page-header"><div class="page-title">🌊 4Oceans Donations</div><div class="page-subtitle">Track donations to 4Ocean Cleanup from Nautical Ops subscriptions</div></div>
+      <div id="fouroceans-content"><div class="loading-state"><div class="spinner"></div> Loading...</div></div>
+    </div>
+    <div id="section-updates" class="section">
+      <div id="updates-content"><div class="loading-state"><div class="spinner"></div> Loading...</div></div>
+    </div>
+    <div id="section-faq" class="section">
+      <div class="page-header"><div class="page-title">FAQ & Support</div><div class="page-subtitle">Manage FAQs and view user submitted questions</div></div>
+      <div id="faq-content"><div class="loading-state"><div class="spinner"></div> Loading...</div></div>
+    </div>
+  </main>
+</div>
+
+<script>
+let dashData=null,adminPassword='';
+
+function handleLogin(){
+  const pw=document.getElementById('password-input').value.trim();
+  if(!pw)return;
+  adminPassword=pw;
+  loadData(true);
+}
+
+document.getElementById('password-input').addEventListener('keydown',e=>{if(e.key==='Enter')handleLogin();});
+
+function handleLogout(){
+  adminPassword='';dashData=null;
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('app').style.display='none';
+  document.getElementById('password-input').value='';
+  document.getElementById('login-error').textContent='';
+}
+
+async function loadData(isLogin=false){
+  try{
+    const res=await fetch('/api/data',{headers:{'x-admin-password':adminPassword}});
+    if(res.status===401){document.getElementById('login-error').textContent='Incorrect password. Try again.';adminPassword='';return;}
+    dashData=await res.json();
+    if(isLogin){document.getElementById('login-screen').style.display='none';document.getElementById('app').style.display='block';document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));document.getElementById('section-overview').classList.add('active');document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));document.querySelector('.nav-item').classList.add('active');}
+    renderAll();
+  }catch(err){document.getElementById('login-error').textContent='Connection error. Try again.';}
+}
+
+function renderAll(){
+  renderOverview();renderVessels();renderUsers();renderSubscriptions();renderActivity();
+  const t=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+  document.getElementById('last-updated-overview').textContent='Updated at '+t;
+}
+
+const planLabel=p=>({'1_5':'1–5 Crew','6_10':'6–10 Crew','11_15':'11–15 Crew','16_25':'16–25 Crew','26_40':'26–40 Crew','40_plus':'40+ Crew'}[p]||p);
+const billingLabel=b=>({monthly:'Monthly','3_months':'3 Months','6_months':'6 Months','12_months':'Yearly'}[b]||b);
+const statusPill=s=>{const cls={active:'pill-active',trialing:'pill-trialing',canceled:'pill-canceled',past_due:'pill-past_due','no subscription':'pill-none'};return`<span class="status-pill ${cls[s]||'pill-none'}">${s}</span>`;};
+const fmtDate=d=>d?new Date(d).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'}):'—';
+const fmtMoney=n=>'$'+n.toFixed(2);
+const delta=(n,suffix='')=>n===0?`<span class="stat-delta neutral">No change this week</span>`:n>0?`<span class="stat-delta">+${n}${suffix} this week</span>`:`<span class="stat-delta down">${n}${suffix} this week</span>`;
+
+function renderOverview(){
+  const o=dashData.overview;
+  document.getElementById('overview-content').innerHTML=`
+    <div class="stats-grid">
+      <div class="stat-card" style="--accent:var(--navy)"><div class="stat-label">Captains (HOD)</div><div class="stat-value">${o.totalCaptains}</div>${delta(o.newUsersLast7Days)}</div>
+      <div class="stat-card" style="--accent:#64748b"><div class="stat-label">Crew Members</div><div class="stat-value">${o.totalCrew}</div><span class="stat-delta neutral">${o.totalUsers} total users</span></div>
+      <div class="stat-card" style="--accent:var(--navy)"><div class="stat-label">Active Vessels</div><div class="stat-value">${o.totalVessels}</div>${delta(o.newVesselsLast7Days)}</div>
+      <div class="stat-card" style="--accent:var(--green)"><div class="stat-label">Active Subscriptions</div><div class="stat-value">${o.activeSubscriptions}</div><span class="stat-badge badge-green">Paying</span></div>
+      <div class="stat-card" style="--accent:var(--blue)"><div class="stat-label">Free Trials</div><div class="stat-value">${o.trialSubscriptions}</div><span class="stat-badge badge-blue">30-day trial</span></div>
+      <div class="stat-card" style="--accent:var(--green)"><div class="stat-label">MRR (Active)</div><div class="stat-value" style="font-size:22px">${fmtMoney(o.mrr)}</div><span class="stat-delta">Pipeline: ${fmtMoney(o.trialMrr)}</span></div>
+    </div>
+    ${renderChart()}
+    `;
+}
+
+function renderChart(){
+  const daily=dashData.dailySignups;
+  const keys=Object.keys(daily).sort();
+  const vals=keys.map(k=>daily[k]);
+  const max=Math.max(...vals,1);
+  const total=vals.reduce((a,b)=>a+b,0);
+  const bars=keys.map((k,i)=>{
+    const h=Math.max(3,Math.round((vals[i]/max)*90));
+    return`<div class="chart-bar-wrap"><div class="chart-bar" style="height:${h}px" title="${k}: ${vals[i]}"></div><div class="chart-bar-label">${k.slice(5)}</div></div>`;
+  }).join('');
+  return`<div class="chart-card"><div class="chart-header"><div><div class="chart-title">Daily Signups — Last 14 Days</div><div class="chart-sub">${total} new users in this period</div></div></div><div class="chart-bars">${bars}</div></div>`;
+}
+
+function toggleVessel(i){
+  const row=document.getElementById('vm-'+i);
+  const arrow=document.getElementById('va-'+i);
+  if(!row)return;
+  const open=row.style.display==='none';
+  row.style.display=open?'table-row':'none';
+  if(arrow)arrow.textContent=open?'▾':'▸';
+}
+
+function renderVessels(){
+  const vs=dashData.vessels;
+  if(!vs.length){document.getElementById('vessels-content').innerHTML='<div class="table-card"><div class="empty-state">No vessels registered yet</div></div>';return;}
+  const rows=vs.map((v,i)=>{
+    const members=(v.members||[]).map(m=>`
+      <tr style="background:#f8fafc">
+        <td style="padding:8px 20px 8px 44px;font-size:12px;color:var(--text)">↳ ${m.name||'—'}</td>
+        <td style="padding:8px 20px;font-size:11px" class="mono">${m.email||'—'}</td>
+        <td style="padding:8px 20px"><span class="status-pill ${m.role==='HOD'?'pill-active':'pill-trialing'}">${m.role==='HOD'?(m.position==='Captain (MOV)'?'MOV':'HOD'):'Crew'}</span></td>
+        <td style="padding:8px 20px;font-size:12px;color:var(--text-muted)">${m.position||'—'}</td>
+        <td colspan="4" style="padding:8px 20px;font-size:11px;color:var(--text-light)" class="mono">Joined ${fmtDate(m.createdAt)}</td>
+      </tr>`).join('');
+    return `<tr style="cursor:pointer" onclick="toggleVessel(${i})">
+      <td><strong>${v.name}</strong> <span id="va-${i}" style="font-size:11px;color:var(--text-light);margin-left:4px">▸</span></td>
+      <td>${v.captain}<br><span class="mono" style="color:var(--text-muted);font-size:11px">${v.captainEmail}</span></td>
+      <td class="mono">${v.crewCount}</td>
+      <td>${statusPill(v.status)}</td>
+      <td>${v.plan!=='—'?planLabel(v.plan):'<span style="color:var(--text-light)">—</span>'}</td>
+      <td>${v.billingPeriod!=='—'?billingLabel(v.billingPeriod):'<span style="color:var(--text-light)">—</span>'}</td>
+      <td class="mono" style="font-size:11px;color:var(--text-muted)">${fmtDate(v.renewalDate)}</td>
+      <td class="mono" style="font-size:11px;color:var(--text-muted)">${fmtDate(v.createdAt)}</td>
+    </tr>
+    <tr id="vm-${i}" style="display:none"><td colspan="8" style="padding:0;border-bottom:1px solid var(--border)"><table style="width:100%;border-collapse:collapse">${members}</table></td></tr>`;
+  }).join('');
+  document.getElementById('vessels-content').innerHTML=`<div class="table-card"><div class="table-header"><div class="table-title">All Vessels</div><div class="table-count">${vs.length} total</div><span style="font-size:12px;color:var(--text-muted)">Click a vessel to see its crew</span></div><div style="overflow-x:auto"><table class="data-table"><thead><tr><th>Vessel</th><th>Captain</th><th>Crew</th><th>Status</th><th>Plan</th><th>Billing</th><th>Renewal</th><th>Created</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+}
+
+
+function roleLabel(u){
+  if(u.role==='HOD'){return u.position==='Captain (MOV)'?'MOV':'HOD';}
+  return 'Crew';
+}
+function rolePill(u){
+  if(u.role==='HOD'){
+    if(u.position==='Captain (MOV)'){
+      return '<span class="status-pill" style="background:var(--blue-bg);color:var(--blue)">MOV</span>';
+    }
+    return '<span class="status-pill" style="background:var(--green-bg);color:var(--green)">HOD</span>';
+  }
+  return '<span class="status-pill" style="background:#fefce8;color:#854d0e">Crew</span>';
+}
+function deletedAccountsTable(){
+  const deleted = dashData.deletedUsers || [];
+  const rows = deleted.map(u =>
+    '<tr><td><strong>'+(u.name||'—')+'</strong></td>'
+    +'<td><span class="mono" style="font-size:11px;color:var(--text-muted)">'+(u.email||'—')+'</span></td>'
+    +'<td><span class="status-pill pill-canceled">'+(u.role||'—')+'</span></td>'
+    +'<td class="mono" style="font-size:11px;color:var(--text-muted)">'+fmtDate(u.deleted_at)+'</td></tr>'
+  ).join('');
+  return '<div class="table-card" style="margin-top:20px"><div class="table-header"><div class="table-title">🗑️ Deleted Accounts</div><div class="table-count">'+deleted.length+' total</div></div>'
+    +'<div style="overflow-x:auto"><table class="data-table"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Deleted At</th></tr></thead>'
+    +'<tbody>'+(rows||'<tr><td colspan="4" style="text-align:center;color:var(--text-muted)">No deleted accounts yet</td></tr>')+'</tbody></table></div></div>';
+}
+function renderUsers(){
+  const allUsers=dashData.users||[];
+  const vs=dashData.vessels||[];
+  const captains=allUsers.filter(u=>u.role==='HOD');
+  const assignedCrew=allUsers.filter(u=>u.role!=='HOD'&&u.vessel_id);
+  const unassignedCrew=allUsers.filter(u=>u.role!=='HOD'&&!u.vessel_id);
+  function getVesselName(vid){const v=vs.find(v=>v.id===vid);return v?v.name:'—';}
+  const captainRows=captains.map(u=>'<tr><td><strong>'+(u.name||'—')+'</strong></td><td><span class="mono" style="font-size:11px;color:var(--text-muted)">'+(u.email||'—')+'</span></td><td>'+rolePill(u)+'</td><td>'+getVesselName(u.vessel_id)+'</td><td class="mono" style="font-size:11px;color:var(--text-muted)">'+fmtDate(u.created_at)+'</td></tr>').join('');
+  const assignedRows=assignedCrew.map(u=>'<tr><td><strong>'+(u.name||'—')+'</strong></td><td><span class="mono" style="font-size:11px;color:var(--text-muted)">'+(u.email||'—')+'</span></td><td><span class="status-pill pill-trialing">'+(u.position||'Crew')+'</span></td><td>'+getVesselName(u.vessel_id)+'</td><td class="mono" style="font-size:11px;color:var(--text-muted)">'+fmtDate(u.created_at)+'</td></tr>').join('');
+  const unassignedRows=unassignedCrew.map(u=>'<tr><td><strong>'+(u.name||'—')+'</strong></td><td><span class="mono" style="font-size:11px;color:var(--text-muted)">'+(u.email||'—')+'</span></td><td><span class="status-pill pill-trialing">'+(u.position||'Crew')+'</span></td><td style="color:#f59e0b;font-weight:500">Not assigned</td><td class="mono" style="font-size:11px;color:var(--text-muted)">'+fmtDate(u.created_at)+'</td></tr>').join('');
+  document.getElementById('users-content').innerHTML=
+    '<div class="stats-grid" style="margin-bottom:20px">'
+    +'<div class="stat-card" style="--accent:var(--navy)"><div class="stat-label">Captains (HOD)</div><div class="stat-value">'+captains.length+'</div>'+delta(dashData.overview.newUsersLast7Days)+'</div>'
+    +'<div class="stat-card" style="--accent:#64748b"><div class="stat-label">Crew Members</div><div class="stat-value">'+assignedCrew.length+'</div></div>'
+    +'<div class="stat-card" style="--accent:#f59e0b"><div class="stat-label">Unassigned Crew</div><div class="stat-value">'+unassignedCrew.length+'</div></div>'
+    +'<div class="stat-card" style="--accent:var(--navy)"><div class="stat-label">Total Users</div><div class="stat-value">'+dashData.overview.totalUsers+'</div></div>'
+    +'</div>'
+    +'<div class="table-card" style="margin-bottom:20px"><div class="table-header"><div class="table-title">Captains</div><div class="table-count">'+captains.length+' total</div></div><div style="overflow-x:auto"><table class="data-table"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Vessel</th><th>Joined</th></tr></thead><tbody>'+(captainRows||'<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">No captains yet</td></tr>')+'</tbody></table></div></div>'
+    +'<div class="table-card" style="margin-bottom:20px"><div class="table-header"><div class="table-title">Crew Members</div><div class="table-count">'+assignedCrew.length+' assigned</div></div><div style="overflow-x:auto"><table class="data-table"><thead><tr><th>Name</th><th>Email</th><th>Position</th><th>Vessel</th><th>Joined</th></tr></thead><tbody>'+(assignedRows||'<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">No assigned crew yet</td></tr>')+'</tbody></table></div></div>'
+    +'<div class="table-card"><div class="table-header"><div class="table-title">Unassigned Crew</div><div class="table-count">'+unassignedCrew.length+' total</div></div><div style="overflow-x:auto"><table class="data-table"><thead><tr><th>Name</th><th>Email</th><th>Position</th><th>Vessel</th><th>Joined</th></tr></thead><tbody>'+(unassignedRows||'<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">No unassigned crew</td></tr>')+'</tbody></table></div></div>'
+    +deletedAccountsTable();
+}
+function renderSubscriptions(){
+  const subs=dashData.subscriptions;
+  const active=subs.filter(s=>s.status==='active');
+  const trialing=subs.filter(s=>s.status==='trialing');
+  const totalMrr=active.reduce((sum,s)=>sum+s.mrr,0);
+  const rows=subs.map(s=>{
+    const vessel=dashData.vessels.find(v=>v.id===s.vessel_id);
+    return`<tr><td><strong>${vessel?.name??s.vessel_id.slice(0,8)+'...'}</strong></td><td>${statusPill(s.status)}</td><td>${planLabel(s.plan_tier)}</td><td>${billingLabel(s.billing_period)}</td><td class="mono" style="color:var(--green);font-weight:500">${fmtMoney(s.mrr)}/mo</td><td class="mono" style="font-size:11px;color:var(--text-muted)">${fmtDate(s.current_period_end)}</td><td class="mono" style="font-size:11px;color:var(--text-muted)">${fmtDate(s.created_at)}</td></tr>`;
+  }).join('');
+  document.getElementById('subscriptions-content').innerHTML=`
+    <div class="stats-grid" style="margin-bottom:20px">
+      <div class="stat-card" style="--accent:var(--green)"><div class="stat-label">Monthly Recurring Revenue</div><div class="stat-value" style="font-size:24px">${fmtMoney(totalMrr)}</div><span class="stat-delta">from ${active.length} paying subs</span></div>
+      <div class="stat-card" style="--accent:var(--green)"><div class="stat-label">Active Subscriptions</div><div class="stat-value">${active.length}</div><span class="stat-badge badge-green">Paying</span></div>
+      <div class="stat-card" style="--accent:var(--blue)"><div class="stat-label">Free Trials</div><div class="stat-value">${trialing.length}</div><span class="stat-badge badge-blue">30-day</span></div>
+      <div class="stat-card" style="--accent:var(--blue)"><div class="stat-label">Trial Pipeline</div><div class="stat-value" style="font-size:24px">${fmtMoney(dashData.overview.trialMrr)}</div><span class="stat-delta">potential MRR</span></div>
+    </div>
+    <div class="table-card"><div class="table-header"><div class="table-title">All Subscriptions</div><div class="table-count">${subs.length} total</div></div><div style="overflow-x:auto"><table class="data-table"><thead><tr><th>Vessel</th><th>Status</th><th>Plan</th><th>Billing</th><th>MRR</th><th>Renewal</th><th>Started</th></tr></thead><tbody>${rows||'<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">No subscriptions yet</td></tr>'}</tbody></table></div></div>`;
+}
+
+function renderActivity(){
+  const o=dashData.overview;
+  document.getElementById('activity-content').innerHTML=`
+    <div class="stats-grid">
+      <div class="stat-card" style="--accent:var(--amber)"><div class="stat-label">Trips Logged</div><div class="stat-value">${o.totalTrips}</div><span class="stat-delta neutral">All time</span></div>
+      <div class="stat-card" style="--accent:var(--amber)"><div class="stat-label">Maintenance Logs</div><div class="stat-value">${o.totalMaintenance}</div><span class="stat-delta neutral">All time</span></div>
+      <div class="stat-card" style="--accent:var(--amber)"><div class="stat-label">Tasks Created</div><div class="stat-value">${o.totalTasks}</div><span class="stat-delta neutral">All time</span></div>
+      <div class="stat-card" style="--accent:var(--navy)"><div class="stat-label">New Users (7 days)</div><div class="stat-value">${o.newUsersLast7Days}</div>${delta(o.newUsersLast7Days)}</div>
+      <div class="stat-card" style="--accent:var(--navy)"><div class="stat-label">New Vessels (7 days)</div><div class="stat-value">${o.newVesselsLast7Days}</div>${delta(o.newVesselsLast7Days)}</div>
+    </div>
+    ${renderChart()}`;
+}
+
+
+
+let faqData = null;
+
+async function loadFAQData() {
+  if (!adminPassword) return;
+  document.getElementById('faq-content').innerHTML = '<div class="loading-state"><div class="spinner"></div> Loading...</div>';
+  try {
+    const res = await fetch('/api/faq', { headers: { 'x-admin-password': adminPassword } });
+    if (!res.ok) throw new Error('Failed');
+    faqData = await res.json();
+    renderFAQ();
+  } catch(e) {
+    document.getElementById('faq-content').innerHTML = '<div class="empty-state">Failed to load FAQ data</div>';
+  }
+}
+
+let updatesData = [];
+async function loadUpdates() {
+  try {
+    const res = await fetch('/api/updates?t=' + Date.now(), { headers: { 'x-admin-password': adminPassword, 'cache-control': 'no-cache' } });
+    if (!res.ok) throw new Error('Failed');
+    updatesData = await res.json();
+    renderUpdates();
+  } catch(e) {
+    document.getElementById('updates-content').innerHTML = '<div class="empty-state">Failed to load updates</div>';
+  }
+}
+function renderUpdates() {
+  const rows = updatesData.map(u => '<tr>'
+    + '<td><strong>' + u.title + '</strong></td>'
+    + '<td><span class="status-pill ' + (u.status === 'coming_soon' ? 'pill-trialing' : 'pill-active') + '">' + (u.status === 'coming_soon' ? 'Coming Soon' : 'Released') + '</span></td>'
+    + '<td>' + (u.category || '—') + '</td>'
+    + '<td style="color:var(--text-muted);font-size:12px">' + (u.description || '—') + '</td>'
+    + '<td><button onclick="deleteUpdate(&quot;' + u.id + '&quot;)" style="background:none;border:1px solid #ef4444;color:#ef4444;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:12px">Delete</button>'
+    + (u.status === 'coming_soon' ? '<button onclick="releaseUpdate(&quot;' + u.id + '&quot;)" style="background:none;border:1px solid var(--green);color:var(--green);padding:3px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-left:4px">Release</button>' : '')
+    + '</td></tr>'
+  ).join('');
+  document.getElementById('updates-content').innerHTML =
+    '<div class="page-header"><div class="page-title">Future Updates & Features</div><div class="page-subtitle">Manage what users see in the app</div></div>'
+    + '<div class="table-card" style="margin-bottom:20px"><div class="table-header"><div class="table-title">Add New Update</div></div>'
+    + '<div style="padding:20px;display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end">'
+    + '<div style="display:flex;flex-direction:column;gap:4px;flex:2;min-width:160px"><label style="font-size:12px;color:var(--text-muted);font-weight:500">Title</label><input id="upd-title" placeholder="e.g. Offline Mode" style="padding:8px 12px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-size:14px"/></div>'
+    + '<div style="display:flex;flex-direction:column;gap:4px;flex:3;min-width:200px"><label style="font-size:12px;color:var(--text-muted);font-weight:500">Description</label><input id="upd-desc" placeholder="Brief description" style="padding:8px 12px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-size:14px"/></div>'
+    + '<div style="display:flex;flex-direction:column;gap:4px;min-width:140px"><label style="font-size:12px;color:var(--text-muted);font-weight:500">Category</label><input id="upd-category" placeholder="e.g. Tasks" style="padding:8px 12px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-size:14px"/></div>'
+    + '<div style="display:flex;flex-direction:column;gap:4px;min-width:130px"><label style="font-size:12px;color:var(--text-muted);font-weight:500">Status</label><select id="upd-status" style="padding:8px 12px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-size:14px"><option value="coming_soon">Coming Soon</option><option value="released">Released</option></select></div>'
+    + '<button onclick="addUpdate()" style="padding:8px 20px;background:var(--navy);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px;font-weight:500;height:38px">+ Add</button>'
+    + '</div></div>'
+    + '<div class="table-card"><div class="table-header"><div class="table-title">All Updates</div><div class="table-count">' + updatesData.length + ' items</div></div>'
+    + '<div style="overflow-x:auto"><table class="data-table"><thead><tr><th>Title</th><th>Status</th><th>Category</th><th>Description</th><th>Actions</th></tr></thead>'
+    + '<tbody>' + (rows || '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:32px">No updates added yet.</td></tr>') + '</tbody></table></div></div>';
+}
+async function addUpdate() {
+  var title = document.getElementById('upd-title').value.trim();
+  var desc = document.getElementById('upd-desc').value.trim();
+  var category = document.getElementById('upd-category').value.trim();
+  var status = document.getElementById('upd-status').value;
+  if (!title || !desc) { alert('Please enter a title and description.'); return; }
+  try {
+    const res = await fetch('/api/updates', { method: 'POST', headers: { 'x-admin-password': adminPassword, 'content-type': 'application/json' }, body: JSON.stringify({ title, description: desc, category, status }) });
+    if (!res.ok) throw new Error('Failed');
+    loadUpdates();
+  } catch(e) { alert('Failed to add update.'); }
+}
+async function deleteUpdate(id) {
+  if (!confirm('Delete this update?')) return;
+  try {
+    const res = await fetch('/api/updates', { method: 'DELETE', headers: { 'x-admin-password': adminPassword, 'content-type': 'application/json' }, body: JSON.stringify({ id }) });
+    if (!res.ok) throw new Error('Failed');
+    loadUpdates();
+  } catch(e) { alert('Failed to delete update.'); }
+}
+async function releaseUpdate(id) {
+  try {
+    const res = await fetch('/api/updates', { method: 'PUT', headers: { 'x-admin-password': adminPassword, 'content-type': 'application/json' }, body: JSON.stringify({ id, status: 'released', released_at: new Date().toISOString() }) });
+    if (!res.ok) throw new Error('Failed');
+    loadUpdates();
+  } catch(e) { alert('Failed to release update.'); }
+}
+function renderFAQ() {
+  if (!faqData) return;
+  const { faqs, questions } = faqData;
+
+  const faqRows = faqs.map(f => `
+    <tr>
+      <td style="width:40px" class="mono">${f.display_order}</td>
+      <td><strong>${f.question}</strong></td>
+      <td style="max-width:300px;color:var(--text-muted);font-size:12px">${f.answer.substring(0,100)}...</td>
+      <td>
+        <button onclick="editFAQ('${f.id}','${encodeURIComponent(f.question)}','${encodeURIComponent(f.answer)}')" style="background:var(--navy-light);color:var(--navy);border:none;padding:4px 10px;border-radius:6px;font-size:12px;cursor:pointer">Edit</button>
+      </td>
+    </tr>`).join('');
+
+  const qRows = questions.length ? questions.map(q => `
+    <tr>
+      <td><strong>${q.user_name||'—'}</strong><br><span class="mono" style="color:var(--text-muted);font-size:11px">${q.user_email||'—'}</span></td>
+      <td>${q.question}</td>
+      <td><span class="status-pill ${q.status==='pending'?'pill-trialing':'pill-active'}">${q.status}</span></td>
+      <td class="mono" style="font-size:11px;color:var(--text-muted)">${fmtDate(q.created_at)}</td>
+      <td>
+        ${q.status==='pending'?`<button onclick="answerQuestion('${q.id}')" style="background:var(--green-bg);color:var(--green);border:1px solid var(--green-border);padding:4px 10px;border-radius:6px;font-size:12px;cursor:pointer">Answer</button>`:'<span style="color:var(--text-muted);font-size:12px">Answered</span>'}
+      </td>
+    </tr>`).join('') : '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:24px">No questions submitted yet</td></tr>';
+
+  document.getElementById('faq-content').innerHTML = `
+    <div class="table-card" style="margin-bottom:24px">
+      <div class="table-header">
+        <div class="table-title">FAQs</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="table-count">${faqs.length} total</span>
+          <button onclick="addFAQ()" style="background:var(--navy);color:white;border:none;padding:6px 14px;border-radius:7px;font-size:12px;cursor:pointer;font-family:Inter,sans-serif">+ Add FAQ</button>
+        </div>
+      </div>
+      <div style="overflow-x:auto"><table class="data-table"><thead><tr><th>#</th><th>Question</th><th>Answer Preview</th><th>Actions</th></tr></thead><tbody>${faqRows}</tbody></table></div>
+    </div>
+    <div class="table-card">
+      <div class="table-header"><div class="table-title">User Submitted Questions</div><span class="table-count">${questions.length} total</span></div>
+      <div style="overflow-x:auto"><table class="data-table"><thead><tr><th>User</th><th>Question</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody>${qRows}</tbody></table></div>
+    </div>`;
+}
+
+function addFAQ() {
+  const q = prompt('Question:');
+  if (!q) return;
+  const a = prompt('Answer:');
+  if (!a) return;
+  saveFAQ(null, q, a);
+}
+
+function editFAQ(id, q, a) {
+  const newQ = prompt('Question:', decodeURIComponent(q));
+  if (!newQ) return;
+  const newA = prompt('Answer:', decodeURIComponent(a));
+  if (!newA) return;
+  saveFAQ(id, newQ, newA);
+}
+
+async function saveFAQ(id, question, answer) {
+  try {
+    const res = await fetch('/api/faq', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-password': adminPassword },
+      body: JSON.stringify({ id, question, answer })
+    });
+    if (!res.ok) throw new Error('Failed');
+    await loadFAQData();
+  } catch(e) {
+    alert('Failed to save FAQ');
+  }
+}
+
+async function answerQuestion(id) {
+  const answer = prompt('Your answer to this question:');
+  if (!answer) return;
+  try {
+    const res = await fetch('/api/faq', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-password': adminPassword },
+      body: JSON.stringify({ type: 'answer_question', id, answer })
+    });
+    if (!res.ok) throw new Error('Failed');
+    await loadFAQData();
+  } catch(e) {
+    alert('Failed to save answer');
+  }
+}
+
+function showSection(name,btn){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  document.getElementById('section-'+name).classList.add('active');
+  btn.classList.add('active');
+}
+
+var expensesCache=[];
+async function loadExpensesFromAPI(){
+  try{
+    const res=await fetch('/api/expenses',{headers:{'x-admin-password':adminPassword}});
+    if(!res.ok)return[];
+    expensesCache=await res.json();
+    expensesCache=expensesCache.map(e=>({...e,period:e.payment_type}));
+    return expensesCache;
+  }catch(e){return[];}
+}
+function monthlyEquivalent(a,p){if(p==='monthly')return a;if(p==='weekly')return a*52/12;if(p==='annual')return a/12;return 0;}
+function periodLabel(p){return{monthly:'Monthly',weekly:'Weekly',annual:'Annual','once-off':'Once-off'}[p]||p;}
+async function renderAccounting(){
+  var expenses=await loadExpensesFromAPI();
+  var mrr=dashData.overview.mrr||0;
+  var trialMrr=dashData.overview.trialMrr||0;
+  var totalExp=expenses.reduce(function(s,e){return s+monthlyEquivalent(parseFloat(e.amount)||0,e.period);},0);
+  var activeSubs=dashData.overview.activeSubscriptions||0;
+  var paddleFee=Math.round((mrr*0.30)*100)/100;
+  var fourOceansDonation=Math.round(mrr*0.05*100)/100;
+  var totalExpWithPaddle=totalExp+paddleFee;
+  var totalExpWithAll=totalExpWithPaddle+fourOceansDonation;
+  var oneOff=expenses.filter(function(e){return e.period==='once-off';}).reduce(function(s,e){return s+(parseFloat(e.amount)||0);},0);
+  var net=mrr-totalExpWithAll;
+  var rows=expenses.map(function(e,i){
+    return '<tr><td><strong>'+e.name+'</strong></td><td class="mono">$'+parseFloat(e.amount).toFixed(2)+'</td><td><span class="status-pill '+(e.period==='once-off'?'pill-inactive':e.period==='annual'?'pill-trialing':'pill-active')+'">'+periodLabel(e.period)+'</span></td><td class="mono" style="color:var(--text-muted)">$'+monthlyEquivalent(parseFloat(e.amount)||0,e.period).toFixed(2)+'/mo</td><td><button onclick="editExpense('+e.id+')" style="background:none;border:1px solid var(--border);color:var(--text-muted);padding:3px 10px;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">Edit</button><button onclick="deleteExpense('+e.id+')" style="background:none;border:1px solid #ef4444;color:#ef4444;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:12px">Delete</button></td></tr>';
+  }).join('');
+  var footer=expenses.length>0?'<div style="padding:16px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:32px"><span style="font-size:13px;color:var(--text-muted)">Total Monthly Expenses: <strong style="color:var(--text)">$'+totalExpWithAll.toFixed(2)+'</strong></span><span style="font-size:13px;color:var(--text-muted)">Net Profit: <strong style="color:'+(net>=0?'var(--green)':'#ef4444')+'">'+(net>=0?'+':'-')+'$'+Math.abs(net).toFixed(2)+'/mo</strong></span></div>':'';
+  document.getElementById('accounting-content').innerHTML=
+    '<div class="stats-grid" style="margin-bottom:20px">'
+    +'<div class="stat-card" style="--accent:var(--green)"><div class="stat-label">Total MRR</div><div class="stat-value">$'+mrr.toFixed(2)+'</div><span class="stat-delta neutral">+$'+trialMrr.toFixed(2)+' trial potential</span></div>'
+    +'<div class="stat-card" style="--accent:#ef4444"><div class="stat-label">Monthly Expenses</div><div class="stat-value">$'+totalExpWithAll.toFixed(2)+'</div>'+(oneOff>0?'<span class="stat-delta neutral">+$'+oneOff.toFixed(2)+' once-off</span>':'')+'</div>'
+    +'<div class="stat-card" style="--accent:'+(net>=0?'var(--navy)':'#ef4444')+'"><div class="stat-label">Net Monthly Profit</div><div class="stat-value" style="color:'+(net>=0?'var(--green)':'#ef4444')+'">'+(net>=0?'+':'-')+'$'+Math.abs(net).toFixed(2)+'</div><span class="stat-delta neutral">'+(mrr>0?((net/mrr)*100).toFixed(1):'0')+'% margin</span></div>'
+    +'</div>'
+    +'<div class="table-card" style="margin-bottom:20px"><div class="table-header"><div class="table-title">Add Expense</div></div>'
+    +'<div style="padding:16px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">'
+    +'<div style="display:flex;flex-direction:column;gap:4px;flex:2;min-width:160px"><label style="font-size:12px;color:var(--text-muted);font-weight:500">Expense Name</label><input id="exp-name" placeholder="e.g. Supabase Pro" style="padding:8px 12px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-size:14px"/></div>'
+    +'<div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:120px"><label style="font-size:12px;color:var(--text-muted);font-weight:500">Amount ($)</label><input id="exp-amount" type="number" min="0" step="0.01" placeholder="0.00" style="padding:8px 12px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-size:14px"/></div>'
+    +'<div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:140px"><label style="font-size:12px;color:var(--text-muted);font-weight:500">Payment Type</label><select id="exp-period" style="padding:8px 12px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-size:14px"><option value="monthly">Monthly</option><option value="weekly">Weekly</option><option value="annual">Annual</option><option value="once-off">Once-off</option></select></div>'
+    +'<button onclick="addExpense()" style="padding:8px 20px;background:var(--navy);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px;font-weight:500;height:38px">+ Add Expense</button>'
+    +'</div></div>'
+    +'<div class="table-card"><div class="table-header"><div class="table-title">Expenses</div><div class="table-count">'+expenses.length+' items</div></div>'
+    +'<div style="overflow-x:auto"><table class="data-table"><thead><tr><th>Name</th><th>Amount</th><th>Type</th><th>Monthly Cost</th><th>Actions</th></tr></thead>'
+    +'<tbody>'
+    +'<tr style="background:rgba(14,165,233,0.05)"><td><strong>4Oceans Cleanup Donations</strong></td><td class="mono">$'+fourOceansDonation.toFixed(2)+'</td><td><span class="status-pill pill-active">Monthly</span></td><td class="mono" style="color:var(--text-muted)">$'+fourOceansDonation.toFixed(2)+'/mo</td><td style="color:#0ea5e9;font-size:12px">5% of MRR</td></tr>'
+    +'<tr style="background:rgba(30,58,95,0.05)"><td><strong>Apple Fees</strong> <span style="font-size:11px;color:var(--text-mut)">(auto)</span></td><td class="mono">$'+paddleFee.toFixed(2)+'</td><td><span class="status-pill pill-active">Monthly</span></td><td class="mono" style="color:var(--text-muted)">$'+paddleFee.toFixed(2)+'/mo</td><td style="color:var(--text-muted);font-size:12px">30% of MRR</td></tr>'
+    +(rows||'<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:32px">No manual expenses added yet.</td></tr>')
+    +'</tbody></table></div>'
+    +footer+'</div>';
+}
+async function addExpense(){
+  var name=document.getElementById('exp-name').value.trim();
+  var amount=document.getElementById('exp-amount').value;
+  var period=document.getElementById('exp-period').value;
+  if(!name||!amount||parseFloat(amount)<=0){alert('Please enter a name and valid amount.');return;}
+  var expenses=await loadExpensesFromAPI();
+  try{
+    const res=await fetch('/api/expenses',{method:'POST',headers:{'x-admin-password':adminPassword,'content-type':'application/json'},body:JSON.stringify({name,amount:parseFloat(amount),period})});
+    if(!res.ok)throw new Error('Failed');
+    document.getElementById('exp-name').value='';
+    document.getElementById('exp-amount').value='';
+    renderAccounting();
+  }catch(err){alert('Failed to add expense.');}
+}
+async function deleteExpense(id){if(!confirm('Delete this expense?'))return;try{const res=await fetch('/api/expenses',{method:'DELETE',headers:{'x-admin-password':adminPassword,'content-type':'application/json'},body:JSON.stringify({id})});if(!res.ok)throw new Error('Failed');renderAccounting();}catch(e){alert('Failed to delete expense.');}}
+async function editExpense(id){var e=expensesCache.find(function(x){return x.id===id;});if(!e)return;var n=prompt('Expense name:',e.name);if(n===null)return;var a=prompt('Amount ($):',e.amount);if(a===null)return;var p=prompt('Payment type (monthly/weekly/annual/once-off):',e.period);if(p===null)return;if(['monthly','weekly','annual','once-off'].indexOf(p)===-1){alert('Invalid type.');return;}try{const res=await fetch('/api/expenses',{method:'PUT',headers:{'x-admin-password':adminPassword,'content-type':'application/json'},body:JSON.stringify({id,name:n.trim(),amount:parseFloat(a),period:p})});if(!res.ok)throw new Error('Failed');renderAccounting();}catch(err){alert('Failed to update expense.');}}
+
+function renderFourOceans(){
+  var subs=dashData.subscriptions||[];
+  var activeSubs=subs.filter(function(s){return s.status==='active'||s.status==='trialing';});
+  var totalMrr=dashData.overview.mrr||0;
+  var monthlyDonation=Math.round(totalMrr*0.05*100)/100;
+  var now=new Date();
+  var totalDonated=0;
+  activeSubs.forEach(function(s){
+    var start=new Date(s.created_at);
+    var mrr=s.mrr||0;
+    var monthsActive=(now.getFullYear()-start.getFullYear())*12+(now.getMonth()-start.getMonth());
+    if(monthsActive<1)monthsActive=1;
+    totalDonated+=mrr*0.05*monthsActive;
+  });
+  totalDonated=Math.round(totalDonated*100)/100;
+  function monthsToEndOfYear(year){
+    var endOfYear=new Date(year,11,31);
+    var diff=(endOfYear-now)/1000/60/60/24/30.44;
+    return Math.max(0,diff);
+  }
+  var currentYear=now.getFullYear();
+  var forecasts=[];
+  for(var y=currentYear;y<=currentYear+3;y++){
+    var months=monthsToEndOfYear(y);
+    var projected=totalDonated+(monthlyDonation*months);
+    forecasts.push({year:y,projected:Math.round(projected*100)/100,monthly:monthlyDonation});
+  }
+  var planNames={'1_5':'1-5 Crew','6_10':'6-10 Crew','11_15':'11-15 Crew','16_25':'16-25 Crew','26_40':'26-40 Crew','40_plus':'40+ Crew'};
+  var planBreakdown={};
+  activeSubs.forEach(function(s){
+    var tier=s.plan_tier||'unknown';
+    if(!planBreakdown[tier])planBreakdown[tier]={count:0,mrr:0,donation:0};
+    planBreakdown[tier].count++;
+    planBreakdown[tier].mrr+=s.mrr||0;
+    planBreakdown[tier].donation+=(s.mrr||0)*0.05;
+  });
+  var planRows=Object.keys(planBreakdown).map(function(tier){
+    var p=planBreakdown[tier];
+    return '<tr><td><strong>'+(planNames[tier]||tier)+'</strong></td><td class="mono">'+p.count+'</td><td class="mono" style="color:var(--green)">$'+p.mrr.toFixed(2)+'/mo</td><td class="mono" style="color:#0ea5e9">$'+p.donation.toFixed(2)+'/mo</td></tr>';
+  }).join('');
+  var forecastRows=forecasts.map(function(f){
+    var isCurrent=f.year===currentYear;
+    return '<tr'+(isCurrent?' style="background:rgba(14,165,233,0.06)"':'')+'><td><strong>'+f.year+(isCurrent?' <span style="font-size:11px;color:#0ea5e9">(current)</span>':'')+'</strong></td><td class="mono" style="color:#0ea5e9">$'+f.monthly.toFixed(2)+'/mo</td><td class="mono" style="color:var(--green);font-weight:600">$'+f.projected.toFixed(2)+'</td><td class="mono" style="color:var(--text-muted);font-size:12px">Based on '+activeSubs.length+' active subs</td></tr>';
+  }).join('');
+  document.getElementById('fouroceans-content').innerHTML=
+    '<div class="stats-grid" style="margin-bottom:20px">'
+    +'<div class="stat-card" style="--accent:#0ea5e9"><div class="stat-label">Total Donated to Date</div><div class="stat-value" style="color:#0ea5e9">$'+totalDonated.toFixed(2)+'</div><span class="stat-delta neutral">Estimated from subscription start dates</span></div>'
+    +'<div class="stat-card" style="--accent:#0ea5e9"><div class="stat-label">Monthly Donation</div><div class="stat-value">$'+monthlyDonation.toFixed(2)+'</div><span class="stat-delta neutral">5% of $'+totalMrr.toFixed(2)+' MRR</span></div>'
+    +'<div class="stat-card" style="--accent:var(--green)"><div class="stat-label">Projected This Year</div><div class="stat-value" style="color:var(--green)">$'+forecasts[0].projected.toFixed(2)+'</div><span class="stat-delta neutral">By Dec 31, '+currentYear+'</span></div>'
+    +'<div class="stat-card" style="--accent:var(--navy)"><div class="stat-label">Active Subscriptions</div><div class="stat-value">'+activeSubs.length+'</div><span class="stat-delta neutral">Contributing to donations</span></div>'
+    +'</div>'
+    +'<div class="table-card" style="margin-bottom:20px"><div class="table-header"><div class="table-title">Donation Forecast by Year</div><div class="table-count">Based on current MRR</div></div><div style="overflow-x:auto"><table class="data-table"><thead><tr><th>Year</th><th>Monthly Rate</th><th>Projected Total by Dec 31</th><th>Notes</th></tr></thead><tbody>'+(forecastRows||'<tr><td colspan="4" style="text-align:center;color:var(--text-muted)">No active subscriptions</td></tr>')+'</tbody></table></div></div>'
+    +'<div class="table-card"><div class="table-header"><div class="table-title">Breakdown by Plan</div><div class="table-count">'+activeSubs.length+' active</div></div><div style="overflow-x:auto"><table class="data-table"><thead><tr><th>Plan</th><th>Subscribers</th><th>MRR</th><th>Monthly Donation (5%)</th></tr></thead><tbody>'+(planRows||'<tr><td colspan="4" style="text-align:center;color:var(--text-muted)">No active subscriptions yet</td></tr>')+'</tbody></table></div></div>'
+    +'<div style="margin-top:16px;padding:16px;background:rgba(14,165,233,0.06);border:1px solid rgba(14,165,233,0.2);border-radius:8px;font-size:13px;color:var(--text-muted)">💡 <strong style="color:var(--text)">Note:</strong> Donation amounts are estimates based on subscription MRR and start dates. Actual transfer amounts to 4Ocean will be confirmed on partnership terms are agreed.</div>';
+}
+</script>
+</body>
+</html>

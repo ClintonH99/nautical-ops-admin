@@ -1,0 +1,10 @@
+{
+  "name": "nautical-ops-admin",
+  "version": "1.0.0",
+  "engines": {
+    "node": "22.x"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.8"
+  }
+}
