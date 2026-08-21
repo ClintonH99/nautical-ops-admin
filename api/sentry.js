@@ -68,6 +68,7 @@ module.exports = async function(req, res) {
     return res.status(200).json({
       period: period,
       project: SENTRY_ORG + '/' + SENTRY_PROJECT,
+      sentryUrl: 'https://' + SENTRY_ORG + '.sentry.io/issues/',
       summary: {
         issues: issues.length,
         unresolved: unresolved.length,

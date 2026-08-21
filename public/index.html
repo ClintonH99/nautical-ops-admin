@@ -483,7 +483,9 @@ function renderErrors() {
     + '<div class="stat-card"><div class="stat-label">Events</div><div class="stat-value">' + (sum.events || 0) + '</div></div>'
     + '</div>'
     + '<div class="table-card" style="margin-top:20px"><div class="table-header"><div class="table-title">Recent issues</div>'
-    + '<button class="refresh-btn" onclick="loadErrors()">Refresh</button></div>'
+    + '<button class="refresh-btn" onclick="loadErrors()">Refresh</button>'
+    + (d.sentryUrl ? '<a href="' + escHtml(d.sentryUrl) + '" target="_blank" rel="noopener" class="refresh-btn" style="margin-left:8px;text-decoration:none;display:inline-block">Open in Sentry &#8599;</a>' : '')
+    + '</div>'
     + (rows
       ? '<table class="data-table"><thead><tr><th>Issue</th><th>Status</th><th>Events</th><th>Users</th><th>Last seen</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>'
       : '<div class="empty-state">No errors reported in this period. That is good news.</div>')
