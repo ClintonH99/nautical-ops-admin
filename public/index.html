@@ -170,6 +170,7 @@
       <button class="nav-item" onclick="showSection('accounting',this);renderAccounting()"><span class="icon">💰</span><span>Accounting</span></button>
       <button class="nav-item" onclick="showSection('fouroceans',this);renderFourOceans()"><span class="icon">🌊</span><span>4Oceans</span></button>
       <button class="nav-item" onclick="showSection('updates',this);loadUpdates()"><span class="icon">🚀</span><span>Updates</span></button>
+      <button class="nav-item" onclick="showSection('errors',this);loadErrors()"><span class="icon">🐞</span><span>Errors</span></button>
     </div>
     <div class="topbar-actions">
       <button class="refresh-btn" onclick="loadData()">↻ <span>Refresh</span></button>
@@ -212,6 +213,9 @@
     </div>
     <div id="section-updates" class="section">
       <div id="updates-content"><div class="loading-state"><div class="spinner"></div> Loading...</div></div>
+    </div>
+    <div id="section-errors" class="section">
+      <div id="errors-content"><div class="loading-state"><div class="spinner"></div> Loading...</div></div>
     </div>
     <div id="section-faq" class="section">
       <div class="page-header"><div class="page-title">FAQ & Support</div><div class="page-subtitle">Manage FAQs and view user submitted questions</div></div>
@@ -425,6 +429,66 @@ async function loadFAQData() {
 }
 
 let updatesData = [];
+let errorsData = null;
+function escHtml(v) {
+  return String(v == null ? '' : v).replace(/[&<>"']/g, function(c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+function agoFrom(iso) {
+  if (!iso) return '--';
+  var mins = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+  if (mins < 1) return 'now';
+  if (mins < 60) return mins + 'm';
+  if (mins < 1440) return Math.round(mins / 60) + 'h';
+  return Math.round(mins / 1440) + 'd';
+}
+async function loadErrors() {
+  if (!adminPassword) return;
+  try {
+    const res = await fetch('/api/sentry?t=' + Date.now(), { headers: { 'x-admin-password': adminPassword, 'cache-control': 'no-cache' } });
+    if (!res.ok) {
+      const info = await res.json().catch(function() { return {}; });
+      throw new Error(info.error || 'Failed');
+    }
+    errorsData = await res.json();
+    renderErrors();
+  } catch (e) {
+    document.getElementById('errors-content').innerHTML =
+      '<div class="page-header"><div class="page-title">App Errors</div></div>'
+      + '<div class="empty-state">Could not load errors: ' + escHtml(e.message) + '</div>';
+  }
+}
+function renderErrors() {
+  const d = errorsData || { summary: {}, issues: [] };
+  const sum = d.summary || {};
+  const issues = d.issues || [];
+  const rows = issues.length ? issues.map(function(i) {
+    return '<tr>'
+      + '<td><strong>' + escHtml(i.title) + '</strong>'
+      + (i.culprit ? '<div style="color:var(--text-muted);font-size:12px">' + escHtml(i.culprit) + '</div>' : '')
+      + '</td>'
+      + '<td><span class="status-pill ' + (i.status === 'resolved' ? 'pill-active' : 'pill-trialing') + '">' + escHtml(i.status) + '</span></td>'
+      + '<td>' + i.count + '</td>'
+      + '<td>' + i.userCount + '</td>'
+      + '<td style="color:var(--text-muted);font-size:12px">' + escHtml(agoFrom(i.lastSeen)) + '</td>'
+      + '<td>' + (i.permalink ? '<a href="' + escHtml(i.permalink) + '" target="_blank" rel="noopener" style="color:var(--navy);font-size:12px">Open</a>' : '--') + '</td>'
+      + '</tr>';
+  }).join('') : '';
+  document.getElementById('errors-content').innerHTML =
+    '<div class="page-header"><div class="page-title">App Errors</div><div class="page-subtitle">Live from Sentry &middot; ' + escHtml(d.project || '') + ' &middot; last ' + escHtml(d.period || '14d') + '</div></div>'
+    + '<div class="stats-grid">'
+    + '<div class="stat-card"><div class="stat-label">Unresolved</div><div class="stat-value">' + (sum.unresolved || 0) + '</div></div>'
+    + '<div class="stat-card"><div class="stat-label">Total issues</div><div class="stat-value">' + (sum.issues || 0) + '</div></div>'
+    + '<div class="stat-card"><div class="stat-label">Events</div><div class="stat-value">' + (sum.events || 0) + '</div></div>'
+    + '</div>'
+    + '<div class="table-card" style="margin-top:20px"><div class="table-header"><div class="table-title">Recent issues</div>'
+    + '<button class="refresh-btn" onclick="loadErrors()">Refresh</button></div>'
+    + (rows
+      ? '<table class="data-table"><thead><tr><th>Issue</th><th>Status</th><th>Events</th><th>Users</th><th>Last seen</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>'
+      : '<div class="empty-state">No errors reported in this period. That is good news.</div>')
+    + '</div>';
+}
 async function loadUpdates() {
   try {
     const res = await fetch('/api/updates?t=' + Date.now(), { headers: { 'x-admin-password': adminPassword, 'cache-control': 'no-cache' } });
