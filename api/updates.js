@@ -1,52 +1,19 @@
-const { createClient } = require('@supabase/supabase-js');
-
+const { authorize, client, readAll, validId, hasText, mutationResult } = require('../lib/admin');
 module.exports = async function(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
-  res.setHeader('Pragma', 'no-cache');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'x-admin-password, content-type');
-  if (req.method === 'OPTIONS') return res.status(200).end();
-
-  const password = req.headers['x-admin-password'];
-  if (!password || password !== process.env.ADMIN_PASSWORD) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-
-  const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  );
-
+  if (!authorize(req, res, ['GET', 'POST', 'PUT', 'DELETE'])) return;
   try {
-    if (req.method === 'GET') {
-      const { data, error } = await supabase.from('app_updates').select('*').order('created_at', { ascending: false });
-      if (error) throw error;
-      return res.status(200).json(data);
-    }
-    if (req.method === 'POST') {
-      const { title, description, category, status } = req.body;
-      if (!title || !description) return res.status(400).json({ error: 'Missing fields' });
-      const { data, error } = await supabase.from('app_updates').insert([{ title, description, category: category || null, status: status || 'coming_soon' }]).select().single();
-      if (error) throw error;
-      return res.status(200).json(data);
-    }
-    if (req.method === 'PUT') {
-      const { id, status, released_at } = req.body;
-      if (!id) return res.status(400).json({ error: 'Missing id' });
-      const { data, error } = await supabase.from('app_updates').update({ status, released_at }).eq('id', id).select().single();
-      if (error) throw error;
-      return res.status(200).json(data);
-    }
-    if (req.method === 'DELETE') {
-      const { id } = req.body;
-      if (!id) return res.status(400).json({ error: 'Missing id' });
-      const { error } = await supabase.from('app_updates').delete().eq('id', id);
-      if (error) throw error;
-      return res.status(200).json({ success: true });
-    }
-    return res.status(405).json({ error: 'Method not allowed' });
-  } catch (err) {
-    return res.status(500).json({ error: 'Failed: ' + err.message });
+    const db = client();
+    if (req.method === 'GET') return res.status(200).json(await readAll(db, 'app_updates', '*', 'created_at', false));
+    const body = req.body || {};
+    if (req.method !== 'POST' && !validId(body.id)) return res.status(400).json({ error: 'Invalid update id' });
+    if (req.method === 'DELETE') return mutationResult(res, await db.from('app_updates').delete().eq('id', body.id).select('id'));
+    const status = req.method === 'POST' ? (body.status || 'coming_soon') : body.status;
+    if (!['coming_soon', 'released'].includes(status)) return res.status(400).json({ error: 'Invalid status' });
+    const release = { status, released_at: status === 'released' ? new Date().toISOString() : null };
+    if (req.method === 'PUT') return mutationResult(res, await db.from('app_updates').update(release).eq('id', body.id).select().maybeSingle());
+    if (!hasText(body.title) || !hasText(body.description) || (body.category != null && typeof body.category !== 'string')) return res.status(400).json({ error: 'Enter a title and description' });
+    return mutationResult(res, await db.from('app_updates').insert({ title: body.title.trim(), description: body.description.trim(), category: body.category?.trim() || null, ...release }).select().maybeSingle());
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to process update. Please retry.' });
   }
 };

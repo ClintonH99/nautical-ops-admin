@@ -1,8 +1,9 @@
+const { authorize } = require('../lib/admin');
 const SENTRY_ORG = process.env.SENTRY_ORG || 'nautical-ops';
 const SENTRY_PROJECT = process.env.SENTRY_PROJECT || 'nautical-ops-mobile';
 
 module.exports = async function(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  if (!authorize(req, res, ['GET'])) return;
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -29,16 +30,14 @@ module.exports = async function(req, res) {
     'https://sentry.io/api/0/projects/' +
     encodeURIComponent(SENTRY_ORG) + '/' +
     encodeURIComponent(SENTRY_PROJECT) +
-    '/issues/?statsPeriod=' + period + '&query=';
+    '/issues/?per_page=100&statsPeriod=' + period + '&query=' + encodeURIComponent('lastSeen:-' + period);
 
   try {
-    const r = await fetch(url, { headers: { Authorization: 'Bearer ' + token } });
+    const r = await fetch(url, { headers: { Authorization: 'Bearer ' + token }, signal: AbortSignal.timeout(15000) });
 
     if (!r.ok) {
-      const body = await r.text();
       return res.status(502).json({
         error: 'Sentry returned ' + r.status,
-        detail: body.slice(0, 300),
       });
     }
 
@@ -75,6 +74,8 @@ module.exports = async function(req, res) {
         events: totalEvents,
       },
       issues: issues,
+      hasMore: /rel="next"[^,]*results="true"/.test(r.headers.get('link') || ''),
+      countNotice: 'Counts cover the issues shown (up to 100). Events and affected users are lifetime counts for each issue, not totals for this date range.',
     });
   } catch (err) {
     return res.status(500).json({ error: 'Failed to reach Sentry: ' + err.message });

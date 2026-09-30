@@ -1,10 +1,17 @@
 {
   "name": "nautical-ops-admin",
   "version": "1.0.0",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "audit:read-only": "node --env-file=.env.local scripts/check-read-only.js"
+  },
   "engines": {
     "node": "22.x"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.8"
+  },
+  "overrides": {
+    "ws": "8.22.0"
   }
 }

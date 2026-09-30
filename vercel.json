@@ -18,7 +18,15 @@
       "use": "@vercel/node"
     },
     {
-      "src": "public/**",
+      "src": "public/index.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "public/admin.css",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "public/vessel-logo.png",
       "use": "@vercel/static"
     },
     {
